@@ -1,48 +1,68 @@
 """
-Database Schemas
+Database Schemas for Jamie Andrew Car Services (Doha, Qatar)
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model below represents a MongoDB collection.
+Collection name is the lowercase of the class name.
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, List
+from datetime import datetime
 
-# Example schemas (replace with your own):
 
-class User(BaseModel):
+class Customer(BaseModel):
     """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
+    customers collection
+    Collection name: "customer"
     """
     name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    email: EmailStr = Field(..., description="Email address")
+    phone: str = Field(..., description="WhatsApp / phone number")
+    city: str = Field("Doha", description="City")
+    country: str = Field("Qatar", description="Country")
 
-class Product(BaseModel):
+    car_make: str = Field(..., description="Car make, e.g., Toyota")
+    car_model: str = Field(..., description="Car model, e.g., Camry")
+    car_year: Optional[int] = Field(None, ge=1970, le=2100, description="Car year")
+    plate_number: Optional[str] = Field(None, description="License plate number")
+
+
+class Plan(BaseModel):
     """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
+    plans collection
+    Collection name: "plan"
     """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+    name: str = Field(..., description="Plan name")
+    tier: str = Field(..., description="Tier identifier, e.g., basic, standard, premium")
+    price_qr: float = Field(..., ge=0, description="Monthly price in QAR")
+    description: Optional[str] = Field(None, description="Short description")
+    features: List[str] = Field(default_factory=list, description="List of plan features")
+    is_active: bool = Field(True, description="Whether plan is active")
 
-# Add your own schemas here:
-# --------------------------------------------------
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Subscription(BaseModel):
+    """
+    subscriptions collection
+    Collection name: "subscription"
+    """
+    customer_id: str = Field(..., description="Customer document id")
+    plan_id: str = Field(..., description="Plan document id")
+    status: str = Field("active", description="active | paused | canceled")
+    starts_at: Optional[datetime] = Field(None, description="Start date")
+    renews_at: Optional[datetime] = Field(None, description="Next renewal date")
+
+
+class Booking(BaseModel):
+    """
+    bookings collection
+    Collection name: "booking"
+    """
+    subscription_id: str = Field(..., description="Subscription document id")
+    service_type: str = Field(..., description="Requested service type, e.g., wash, detailing, oil-change")
+    scheduled_date: datetime = Field(..., description="Scheduled date/time (UTC)")
+    location: str = Field(..., description="Service location / address")
+    notes: Optional[str] = Field(None, description="Additional notes")
+    status: str = Field("scheduled", description="scheduled | in-progress | completed | canceled")
+
+
+# These schemas are auto-read by the database viewer tool.
